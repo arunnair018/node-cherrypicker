@@ -1,0 +1,19 @@
+{
+  "name": "cherrypicker",
+  "version": "1.0.0",
+  "description": "a utility to automate git cherry-picking",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arunnair018/node-cherrypicker.git"
+  },
+  "author": "Arun Kumar Nair",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/arunnair018/node-cherrypicker/issues"
+  },
+  "homepage": "https://github.com/arunnair018/node-cherrypicker#readme"
+}
