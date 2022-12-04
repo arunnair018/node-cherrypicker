@@ -1,0 +1,7 @@
+GIT_BASE_DIRECTORY=<git repo path>
+GIT_DIRECTORY=<git repo path>/.git
+GITHUB_ACCESS_TOKEN=<git personal access token>
+PORT=<port not in use>
+REPO_OWNER=<repo owner>
+REPO=<repo>
+BASE_BRANCH=<main branch of repo>

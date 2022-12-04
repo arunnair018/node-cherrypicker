@@ -4,7 +4,8 @@
   "description": "a utility to automate git cherry-picking",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,18 @@
   "bugs": {
     "url": "https://github.com/arunnair018/node-cherrypicker/issues"
   },
-  "homepage": "https://github.com/arunnair018/node-cherrypicker#readme"
+  "type": "module",
+  "homepage": "https://github.com/arunnair018/node-cherrypicker#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongodb": "^4.12.1",
+    "mongoose": "^6.7.5",
+    "octokit": "^2.0.10",
+    "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
 }
