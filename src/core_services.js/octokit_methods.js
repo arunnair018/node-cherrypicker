@@ -1,4 +1,8 @@
-export const octo_get_pull = async (octokit, pull_number) => {
+import { Octokit, App } from "octokit";
+
+const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
+
+export const octo_get_pull_request = async (pull_number) => {
   try {
     const resp = await octokit.request(
       "GET /repos/{owner}/{repo}/pulls/{pull_number}",
@@ -14,7 +18,7 @@ export const octo_get_pull = async (octokit, pull_number) => {
   }
 };
 
-export const octo_get_commits = async (octokit, pr_ids) => {
+export const octo_get_commits = async (pr_ids) => {
   try {
     const res = await Promise.all(
       pr_ids.map((id) => {
@@ -29,13 +33,13 @@ export const octo_get_commits = async (octokit, pr_ids) => {
       })
     );
     const data = res.map((res) => res.data.map((obj) => obj.sha));
-    return data;
+    return data.flat();
   } catch (error) {
     console.log(error);
   }
 };
 
-export const octo_pull_request = async (octokit,{ title, body, head, base }) => {
+export const octo_create_pull_request = async ({ title, body, head, base }) => {
   try {
     const resp = await octokit.request("POST /repos/{owner}/{repo}/pulls", {
       owner: process.env.REPO_OWNER,
