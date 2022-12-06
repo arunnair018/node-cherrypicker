@@ -16,4 +16,5 @@ export const GIT_COMMANDS = {
   DELETE: (branch) => `${BASE_COMMAND()} branch -D ${branch}`,
   DELETE_ORIGIN: (branch) => `${BASE_COMMAND()} push -d origin ${branch}`,
   PUSH_ORIGIN: (branch) => `${BASE_COMMAND()} push origin ${branch} -q`,
+  SKIP_PICK: () => `${BASE_COMMAND()} cherry-pick --skip`,
 };
