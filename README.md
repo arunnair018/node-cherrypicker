@@ -14,3 +14,6 @@ a cherry-picker utility written in node
   "pr_ids" : ["<pr1>","<pr2>"],
   "envs" : ["<branch1>","<branch2>"]
 }
+
+## GUI
+* access ui from `localhost/<port>/`
