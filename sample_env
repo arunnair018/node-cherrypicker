@@ -5,3 +5,4 @@ PORT=<port not in use>
 REPO_OWNER=<repo owner>
 REPO=<repo>
 BASE_BRANCH=<main branch of repo>
+SERVER_BRANCHES=<comma seperated branches {for UI}>

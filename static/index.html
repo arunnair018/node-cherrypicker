@@ -50,10 +50,14 @@
             method: 'get',
             url: 'http://localhost:8080/api/v1/get-branches',
             success: function (result) {
+                const node = document.getElementsByClassName('list-group')[0]
+                if(!result.length){
+                    node.innerHTML = `<div class="text-center">No servers configured</div>`
+                    return
+                }
                 const htmlnodes = result.map(server=>{
                     return `<label class="list-group-item d-flex gap-2 "><input class="form-check-input flex-shrink-0" type="checkbox" value="${server}"><span>${server}</span></label>`
                 })
-                const node = document.getElementsByClassName('list-group')[0]
                 node.innerHTML = htmlnodes.join('')
             }
         })
