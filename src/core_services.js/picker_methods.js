@@ -7,7 +7,7 @@ import { GIT_COMMANDS } from "../utilities/git_commands.js";
 import { syscmd } from "./shell_methods.js";
 
 const cut_branch_from_base = async (base_branch, new_branch) => {
-  console.log("\n cutting new branch from ",base_branch)
+  console.log("\n cutting new branch from ", base_branch);
   try {
     await syscmd(GIT_COMMANDS.FETCH());
     await syscmd(GIT_COMMANDS.CHECKOUT(base_branch));
@@ -21,7 +21,7 @@ const cut_branch_from_base = async (base_branch, new_branch) => {
 };
 
 const copy_commits = async (commits) => {
-  console.log("\n starting picking commit")
+  console.log("\n starting picking commit");
   const commit_resp = [];
   try {
     let i = 0;
@@ -30,8 +30,8 @@ const copy_commits = async (commits) => {
         GIT_COMMANDS.PICK_SINGLE_COMMIT(commits[i])
       );
       commit_resp.push({ commit: commits[i], success, message });
-      if(!success){
-        break
+      if (!success) {
+        break;
       }
       i += 1;
     }
@@ -42,7 +42,7 @@ const copy_commits = async (commits) => {
 };
 
 const delete_branch = async (branch) => {
-  console.log("\n deleting branch ",branch)
+  console.log("\n deleting branch ", branch);
   await syscmd(GIT_COMMANDS.ABORT());
   await syscmd(GIT_COMMANDS.CHECKOUT(process.env.BASE_BRANCH));
   await syscmd(GIT_COMMANDS.DELETE(branch));
@@ -50,8 +50,8 @@ const delete_branch = async (branch) => {
 };
 
 const pull_request = async (deatils, head_branch, base_branch) => {
-  console.log("\n creating new PR")
-  return false
+  console.log("\n creating new PR");
+  return false;
   const resp = await octo_create_pull_request({
     title: `[${base_branch}] ${deatils.title}`,
     body: deatils.body,
@@ -66,91 +66,81 @@ const pull_request = async (deatils, head_branch, base_branch) => {
 
 const pick_cherries = async (deatils) => {
   const envs = deatils.envs || [];
-  const env_resp = [];
   let break_picking = false;
 
   const create_new_pr = async (base_branch) => {
-    console.log("\n -----------------------------------")
-    console.log("\n starting picking for ",base_branch)
+    const logs = [];
+    let new_branch = "";
+    let new_pr_url = "";
+
     try {
       // create branch
-      const new_branch = await cut_branch_from_base(
+      new_branch = await cut_branch_from_base(
         base_branch,
         `cp-${base_branch}-${deatils.branch_name}`
       );
       if (!new_branch) {
-        env_resp.push({
-          base_branch: base_branch,
-          pr_url: "",
-          message: "failed to create branch. please refer logs for more info.",
-        });
-        return;
+        throw new Error(
+          "failed to create branch. please refer logs for more info."
+        );
       }
+      logs.push(`created new branch: ${new_branch}`);
+
       // copy new commits
       const new_commits = await copy_commits(deatils.cp_commits);
+      logs.push(new_commits);
       const false_commit = new_commits.find((pick) => !pick.success) || null;
       if (!!false_commit) {
-        env_resp.push({
-          env: base_branch,
-          new_branch: new_branch,
-          prs: "",
-          message: "failed to pick commits. please refer logs for more info.",
-          log: new_commits,
-        });
         delete_branch(new_branch);
-        break_picking = true;
-        return;
+        throw new Error(
+          "Failed to pick commits. please refer logs for more info."
+        );
       }
+
       // push changes
       const [push_success, push_message] = await syscmd(
         GIT_COMMANDS.PUSH_ORIGIN(new_branch)
       );
       if (!push_success) {
-        env_resp.push({
-          env: base_branch,
-          new_branch: new_branch,
-          pr: "",
-          message:
-            "Failed to push changes to remote. please refer logs for more info.",
-          log: push_message,
-        });
         delete_branch(new_branch);
-        break_picking = true;
-        return;
+        throw new Error(
+          "Failed to push changes to remote. please refer logs for more info."
+        );
       }
-      const new_pr_url = await pull_request(deatils, new_branch, base_branch);
+      logs.push(`Pushed changes successfully to remote.`);
+
+      // create new pull request
+      new_pr_url = await pull_request(deatils, new_branch, base_branch);
       if (!new_pr_url) {
-        env_resp.push({
-          env: base_branch,
-          new_branch: new_branch,
-          pr: "",
-          message:
-            "Failed to create a pull request. please refer logs for more info.",
-        });
         delete_branch(new_branch);
-        break_picking = true;
-        return;
+        throw new Error(
+          "Failed to create a pull request. please refer logs for more info."
+        );
       }
-      env_resp.push({
-        env: base_branch,
-        new_branch: new_branch,
-        pr: new_pr,
-        message: "created PR, please get a review before merge.",
-      });
+      logs.push("pull request created successfully.")
     } catch (error) {
       console.log(error);
+      logs.push(error?.message || error);
+      break_picking = true;
     }
+    return {
+      env: base_branch,
+      new_branch: new_branch,
+      pr: new_pr_url,
+      logs: logs,
+    };
   };
 
   let j = 0;
+  const server_resp = [];
   while (j < envs.length) {
     if (!!break_picking) {
       break;
     }
-    await create_new_pr(envs[j]);
+    server_resp.push(await create_new_pr(envs[j]));
     j += 1;
   }
-  return env_resp;
+  return server_resp;
 };
 
 const prepare_pick_criteria = async (envs, pr_ids) => {
