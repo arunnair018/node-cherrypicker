@@ -41,12 +41,14 @@ const copy_commits = async (commits) => {
   return commit_resp;
 };
 
-const delete_branch = async (branch) => {
+const delete_branch = async (branch,origin=true) => {
   console.log("\n deleting branch ", branch);
   await syscmd(GIT_COMMANDS.ABORT());
   await syscmd(GIT_COMMANDS.CHECKOUT(process.env.BASE_BRANCH));
   await syscmd(GIT_COMMANDS.DELETE(branch));
-  await syscmd(GIT_COMMANDS.DELETE_ORIGIN(branch));
+  if(!!origin){
+    await syscmd(GIT_COMMANDS.DELETE_ORIGIN(branch));
+  }
 };
 
 const pull_request = async (deatils, head_branch, base_branch) => {
@@ -57,6 +59,7 @@ const pull_request = async (deatils, head_branch, base_branch) => {
     base: base_branch,
   });
   if (resp?.status === 201) {
+    delete_branch(head_branch,false)
     return resp.data.html_url;
   }
   return false;
@@ -142,12 +145,17 @@ const pick_cherries = async (deatils) => {
 };
 
 const prepare_pick_criteria = async (envs, pr_ids) => {
+  let previous_prs = `#### Previous PR - \n`
+  pr_ids.map(id=>{
+    previous_prs += `-#${id}\n`
+  })
+  previous_prs += `QA_APPROVAL\n\n`
   const details = {};
   const raw_pr = await octo_get_pull_request(pr_ids[0]);
   const commits = await octo_get_commits(pr_ids);
   details.id = raw_pr.number;
   details.title = raw_pr.title;
-  details.body = raw_pr.body;
+  details.body = previous_prs + raw_pr.body;
   details.branch_name = raw_pr.head.ref;
   details.cp_commits = commits;
   details.envs = envs;
