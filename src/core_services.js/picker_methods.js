@@ -50,15 +50,13 @@ const delete_branch = async (branch) => {
 };
 
 const pull_request = async (deatils, head_branch, base_branch) => {
-  console.log("\n creating new PR");
-  return false;
   const resp = await octo_create_pull_request({
     title: `[${base_branch}] ${deatils.title}`,
     body: deatils.body,
     head: head_branch,
     base: base_branch,
   });
-  if (resp.status === 201) {
+  if (resp?.status === 201) {
     return resp.data.html_url;
   }
   return false;
