@@ -23,11 +23,15 @@
             <div class="d-grid gap-3" style="grid-template-columns: 1fr 2fr;">
                 <div class=" border-ligth rounded-3" style="height: calc(100vh - 110px);">
                     <div class="mb-2">
-                        <label for="prids" class="form-label">PR IDS:</label>
+                        <label for="pr_ids" class="form-label">PR IDS:</label>
                         <input type="input" class="form-control" id="pr_ids" placeholder="comma seperated pr id's">
                     </div>
-                    <label>Server:</label>
+                    <label for="list-group" class="form-label">Server:</label>
                     <div class="list-group mx-0 w-auto">
+                    </div>
+                    <div class="mt-2">
+                        <label for="snapshot" class="form-label">Snapshot:</label>
+                        <input type="input" class="form-control" id="snapshot" placeholder="Snapshot branch name">
                     </div>
                     <div class="mt-4 d-flex justify-content-center" style="column-gap: 12px;">
                         <button id="submit" onclick="cherry_pick()" class="btn btn-primary">start picking!</button>
@@ -70,7 +74,9 @@
         const input_text = document.getElementById('pr_ids').value
         const pr_ids = input_text.split(',').filter(item => !!item) || []
 
-        const servers = []
+        const snapshot = document.getElementById('snapshot').value.trim()
+
+        const servers = !!snapshot ? [snapshot] : []
         const nodeList = document.getElementsByClassName("form-check-input");
         for (let node of nodeList) {
             if (node.checked) {
