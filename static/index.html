@@ -30,8 +30,7 @@
                     <div class="list-group mx-0 w-auto">
                     </div>
                     <div class="mt-4 d-flex justify-content-center" style="column-gap: 12px;">
-                        <button id="refresh" onclick="refresh()" class="btn btn-light">Pick new</button>
-                        <button id="submit" onclick="cherry_pick()" class="btn btn-primary">Submit</button>
+                        <button id="submit" onclick="cherry_pick()" class="btn btn-primary">start picking!</button>
                     </div>
                 </div>
                 <div class="bg-light border rounded-3">
@@ -91,6 +90,7 @@
             return
         }
         document.getElementById('api-response').innerHTML = `<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only"></span></div></div>`
+        $('#submit').prop('disabled', true);
         $.ajax({
             method: 'post',
             url: 'http://localhost:8080/api/v1/cherry-pick',
@@ -106,12 +106,19 @@
                         if (typeof item === 'string') {
                             return `<li>${item}</li>`
                         }
-                        return item?.map(item => `<li>commit (${item?.commit.slice(0, 5)}...): ${!!item?.message ? item.message : "picked successsfully"}</li>`) || "<li>please refer log.</li>"
+                        return item?.map(item => `<li>commit (${item?.commit.slice(0, 10)}...): ${!!item?.message ? item.message : "picked successsfully"}</li>`) || "<li>please refer log.</li>"
                     }) || []
                     const timeline = bullets.flat().join('')
-                    return `<div class="card bg-light mb-3"><div class="card-header"><h5><span>${!!item.pr ? '<i class="bi bi-balloon-fill"></i>' : '<i class="bi bi-cloud-lightning-rain-fill"></i>'}</span>&nbsp;&nbsp;${item.env}</h5></div><div class="card-body"><div><ul>${timeline}</ul></div>${!!item.pr ? `<div class="d-flex justify-content-end"><a href="${item.pr}" class="btn btn-primary ml-auto">View pull request</a></div>` : ''}</div></div>`
+                    return `<div class="card bg-light mb-3"><div class="card-header"><h5><span>${!!item.pr ? '<i class="bi bi-balloon-fill"></i>' : '<i class="bi bi-cloud-lightning-rain-fill"></i>'}</span>&nbsp;&nbsp;${item.env}</h5></div><div class="card-body"><div><ul>${timeline}</ul></div>${!!item.pr ? `<div class="d-flex justify-content-end"><a href="${item.pr}" target="_blank" class="btn btn-primary ml-auto">View pull request</a></div>` : ''}</div></div>`
                 })
                 document.getElementById('api-response').innerHTML = resp.join('')
+                document.getElementById('pr_ids').value = ""
+                for (let node of nodeList) {
+                    if (node.checked) {
+                        node.checked = false
+                    }
+                }
+                $('#submit').prop('disabled', false);
             }
         })
     }
