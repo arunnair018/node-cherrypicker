@@ -3,11 +3,14 @@ a cherry-picker utility written in node
 
 
 ## Setup/Installations
-* Install dependencies 
-  * for server : ``npm install``
- * Run server (in main directory of project) ``npm start``
+* Install dependencies ``npm install``
+* create `env` file
+* Run server (in main directory of project) ``npm start``
 
-## API
+## UI interface
+UI interface available @ `localhost/<port>/`
+
+## API (for postman users)
 **[POST]** /api/v1/cherry-pick
 ```
 {
@@ -16,5 +19,5 @@ a cherry-picker utility written in node
 }
 ```
 
-## UI interface
-access ui interface from `localhost/<port>/`
+## Note
+Please run this server with extra clone of desired repo, as it will checkout and do git action on the provided branch. if performed on you current working clone, you might lose your current changes.
