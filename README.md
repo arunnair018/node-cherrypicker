@@ -5,12 +5,12 @@ a cherry-picker utility written in node
 ## Setup/Installations
 * Install dependencies ``npm install``
 * create `env` file
-* Run server (in main directory of project) ``npm start``
+* Run server ``npm start``
 
 ## UI interface
-UI interface available @ `localhost/<port>/`
+UI interface will be hosted @ `localhost/<port>/`
 
-## API (for postman users)
+## API (for postman use)
 **[POST]** /api/v1/cherry-pick
 ```
 {
