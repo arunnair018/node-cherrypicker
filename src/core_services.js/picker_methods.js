@@ -147,7 +147,7 @@ const pick_cherries = async (deatils) => {
 const prepare_pick_criteria = async (envs, pr_ids) => {
   let previous_prs = `#### Previous PR - \n`
   pr_ids.map(id=>{
-    previous_prs += `-#${id}\n`
+    previous_prs += `- #${id}\n\n`
   })
   previous_prs += `QA_APPROVAL\n\n`
   const details = {};
