@@ -33,6 +33,10 @@
                         <label for="snapshot" class="form-label">Snapshot:</label>
                         <input type="input" class="form-control" id="snapshot" placeholder="Snapshot branch name">
                     </div>
+                    <div class="mt-2">
+                        <label for="qaapproval" class="form-label">QA aproval link:</label>
+                        <input type="input" class="form-control" id="qaapproval" placeholder="slack link">
+                    </div>
                     <div class="mt-4 d-flex justify-content-center" style="column-gap: 12px;">
                         <button id="submit" onclick="cherry_pick()" class="btn btn-primary">start picking!</button>
                     </div>
@@ -84,6 +88,8 @@
             }
         }
 
+        const qaapproval = document.getElementById('qaapproval').value.trim()
+
         console.log(pr_ids, servers)
         if (!pr_ids.length) {
             const error_text = `<div class="alert alert-danger" role="alert">Please provide PR id's to cherry-pick.</div>`
@@ -104,7 +110,8 @@
             dataType: 'json',
             data: JSON.stringify({
                 "pr_ids": pr_ids,
-                "envs": servers
+                "envs": servers,
+                "approval": qaapproval
             }),
             success: function (result) {
                 const resp = result.data.map(item => {
@@ -117,8 +124,11 @@
                     const timeline = bullets.flat().join('')
                     return `<div class="card bg-light mb-3"><div class="card-header"><h5><span>${!!item.pr ? '<i class="bi bi-balloon-fill"></i>' : '<i class="bi bi-cloud-lightning-rain-fill"></i>'}</span>&nbsp;&nbsp;${item.env}</h5></div><div class="card-body"><div><ul>${timeline}</ul></div>${!!item.pr ? `<div class="d-flex justify-content-end"><a href="${item.pr}" target="_blank" class="btn btn-primary ml-auto">View pull request</a></div>` : ''}</div></div>`
                 })
+                
                 document.getElementById('api-response').innerHTML = resp.join('')
                 document.getElementById('pr_ids').value = ""
+                document.getElementById('qaapproval').value = ""
+                document.getElementById('snapshot').value = ""
                 for (let node of nodeList) {
                     if (node.checked) {
                         node.checked = false

@@ -43,7 +43,9 @@ const copy_commits = async (commits) => {
 
 const delete_branch = async (branch,origin=true) => {
   console.log("\n deleting branch ", branch);
-  await syscmd(GIT_COMMANDS.ABORT());
+  if(!!origin){
+    await syscmd(GIT_COMMANDS.ABORT());
+  }
   await syscmd(GIT_COMMANDS.CHECKOUT(process.env.BASE_BRANCH));
   await syscmd(GIT_COMMANDS.DELETE(branch));
   if(!!origin){
@@ -78,7 +80,7 @@ const pick_cherries = async (deatils) => {
       // create branch
       new_branch = await cut_branch_from_base(
         base_branch,
-        `cp-${base_branch}-${deatils.branch_name}`
+        `pr-${deatils.id}-cp-${base_branch}`
       );
       if (!new_branch) {
         throw new Error(
@@ -144,12 +146,14 @@ const pick_cherries = async (deatils) => {
   return server_resp;
 };
 
-const prepare_pick_criteria = async (envs, pr_ids) => {
+const prepare_pick_criteria = async (envs, pr_ids,approval="") => {
   let previous_prs = `#### Previous PR - \n`
   pr_ids.map(id=>{
     previous_prs += `- #${id}\n\n`
   })
-  previous_prs += `QA_APPROVAL\n\n`
+  if (!!approval) {
+    previous_prs += `[QA_APPROVAL](${approval})\n\n`;
+  }
   const details = {};
   const raw_pr = await octo_get_pull_request(pr_ids[0]);
   const commits = await octo_get_commits(pr_ids);
@@ -163,8 +167,8 @@ const prepare_pick_criteria = async (envs, pr_ids) => {
   return details;
 };
 
-const cherry_pick = async ({ pr_ids = [], envs = "local" }) => {
-  const criteria = await prepare_pick_criteria(envs, pr_ids);
+const cherry_pick = async ({ pr_ids = [], envs = "local", approval="" }) => {
+  const criteria = await prepare_pick_criteria(envs, pr_ids, approval);
   const basket = await pick_cherries(criteria);
   return {
     data: basket,
