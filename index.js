@@ -2,8 +2,11 @@ import './config.js'
 import express from 'express';
 import cors from 'cors'
 import bodyParser from 'body-parser'
-import { router } from './src/routes/api_v1.js';
 import path from 'path';
+
+import { Server } from 'socket.io';
+import { parse_branches_from_env, socketHandler } from './src/controllers/log_controller.js';
+
 
 const __dirname = path.resolve();
 const app = express();
@@ -16,7 +19,6 @@ app.use(
   })
 );
 app.use(bodyParser.json());
-router(app);
 
 console.log(__dirname)
 
@@ -25,6 +27,20 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/static/index.html');
 });
 
-app.listen(PORT, async () => {
+app.get("/api/v1/get-branches",parse_branches_from_env);
+
+const server = app.listen(PORT, async () => {
   console.log(`server started, listening at port ${PORT}`);
 });
+
+const io = new Server(server,{cors: {
+  origin: '*',
+}});
+io.on("connection", (socket) => {
+  console.log("connected ---> ")
+  socketHandler(socket)
+  socket.on("disconnect",()=>{
+    console.log("connection terminated ===> ")
+  })
+});
+

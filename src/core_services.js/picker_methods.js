@@ -6,6 +6,14 @@ import {
 import { GIT_COMMANDS } from "../utilities/git_commands.js";
 import { syscmd } from "./shell_methods.js";
 
+const SOCKET_ACTIONS = {
+  PICK_START : 'pick_start',
+  PICK_PROGRESS : 'pick_progress',
+  PICK_COMPLETE : 'pick_complete',
+  COMPLETE: 'complete',
+  ERROR: "error"
+}
+
 const cut_branch_from_base = async (base_branch, new_branch) => {
   console.log("\n cutting new branch from ", base_branch);
   try {
@@ -20,7 +28,7 @@ const cut_branch_from_base = async (base_branch, new_branch) => {
   }
 };
 
-const copy_commits = async (commits) => {
+const copy_commits = async (socket,commits) => {
   console.log("\n starting picking commit");
   const commit_resp = [];
   try {
@@ -29,6 +37,7 @@ const copy_commits = async (commits) => {
       const [success, message] = await syscmd(
         GIT_COMMANDS.PICK_SINGLE_COMMIT(commits[i])
       );
+      socket.emit(SOCKET_ACTIONS.PICK_PROGRESS,JSON.stringify({success,message}))
       commit_resp.push({ commit: commits[i], success, message });
       if (!success) {
         break;
@@ -41,15 +50,26 @@ const copy_commits = async (commits) => {
   return commit_resp;
 };
 
-const delete_branch = async (branch,origin=true) => {
-  console.log("\n deleting branch ", branch);
-  if(!!origin){
-    await syscmd(GIT_COMMANDS.ABORT());
-  }
-  await syscmd(GIT_COMMANDS.CHECKOUT(process.env.BASE_BRANCH));
-  await syscmd(GIT_COMMANDS.DELETE(branch));
-  if(!!origin){
-    await syscmd(GIT_COMMANDS.DELETE_ORIGIN(branch));
+const delete_branch = async (socket,branch, origin = true) => {
+  try {
+    console.log("\n deleting branch ", branch);
+    if (!!origin) {
+      await syscmd(GIT_COMMANDS.ABORT());
+    }
+    await syscmd(GIT_COMMANDS.CHECKOUT(process.env.BASE_BRANCH));
+    await syscmd(GIT_COMMANDS.DELETE(branch));
+    if (!!origin) {
+      await syscmd(GIT_COMMANDS.DELETE_ORIGIN(branch));
+    }
+    socket.emit(SOCKET_ACTIONS.PICK_PROGRESS, JSON.stringify({
+      success: true,
+      message: "Deleted branch successfully",
+    }));
+  } catch {
+    socket.emit(SOCKET_ACTIONS.PICK_PROGRESS, JSON.stringify({
+      success: false,
+      message: "Something went wrong while deleting branch, Please refer logs.",
+    }));
   }
 };
 
@@ -61,18 +81,16 @@ const pull_request = async (deatils, head_branch, base_branch) => {
     base: base_branch,
   });
   if (resp?.status === 201) {
-    delete_branch(head_branch,false)
     return resp.data.html_url;
   }
   return false;
 };
 
-const pick_cherries = async (deatils) => {
+const pick_cherries = async (socket,deatils) => {
   const envs = deatils.envs || [];
   let break_picking = false;
 
   const create_new_pr = async (base_branch) => {
-    const logs = [];
     let new_branch = "";
     let new_pr_url = "";
 
@@ -87,14 +105,18 @@ const pick_cherries = async (deatils) => {
           "failed to create branch. please refer logs for more info."
         );
       }
-      logs.push(`created new branch: ${new_branch}`);
+      socket.emit(
+        SOCKET_ACTIONS.PICK_PROGRESS,
+        JSON.stringify({
+          success: true,
+          message: `created new branch: ${new_branch}`,
+        })
+      );
 
       // copy new commits
-      const new_commits = await copy_commits(deatils.cp_commits);
-      logs.push(new_commits);
+      const new_commits = await copy_commits(socket,deatils.cp_commits);
       const false_commit = new_commits.find((pick) => !pick.success) || null;
       if (!!false_commit) {
-        delete_branch(new_branch);
         throw new Error(
           "Failed to pick commits. please refer logs for more info."
         );
@@ -105,74 +127,99 @@ const pick_cherries = async (deatils) => {
         GIT_COMMANDS.PUSH_ORIGIN(new_branch)
       );
       if (!push_success) {
-        delete_branch(new_branch);
         throw new Error(
           "Failed to push changes to remote. please refer logs for more info."
         );
       }
-      logs.push(`Pushed changes successfully to remote.`);
+      socket.emit(
+        SOCKET_ACTIONS.PICK_PROGRESS,
+        JSON.stringify({
+          success: true,
+          message: `Pushed changes successfully to remote.`,
+        })
+      );
 
       // create new pull request
       new_pr_url = await pull_request(deatils, new_branch, base_branch);
       if (!new_pr_url) {
-        delete_branch(new_branch);
         throw new Error(
           "Failed to create a pull request. please refer logs for more info."
         );
       }
-      logs.push("pull request created successfully.")
+      socket.emit(
+        SOCKET_ACTIONS.PICK_PROGRESS,
+        JSON.stringify({
+          success: true,
+          message: "pull request created successfully.",
+        })
+      );
     } catch (error) {
       console.log(error);
-      logs.push(error?.message || error);
+      socket.emit(
+        SOCKET_ACTIONS.PICK_PROGRESS,
+        JSON.stringify({ success: false, message: error.message })
+      );
       break_picking = true;
     }
-    return {
-      env: base_branch,
-      new_branch: new_branch,
-      pr: new_pr_url,
-      logs: logs,
-    };
+    
+    return [new_branch,new_pr_url]
   };
 
   let j = 0;
-  const server_resp = [];
   while (j < envs.length) {
     if (!!break_picking) {
+      socket.emit("completed")
       break;
     }
-    server_resp.push(await create_new_pr(envs[j]));
+    socket.emit(SOCKET_ACTIONS.PICK_START,envs[j])
+    const [new_branch,url] = await create_new_pr(envs[j]);
+    !!url ? await delete_branch(socket, head_branch,false) : await delete_branch(socket,new_branch );
+    socket.emit(
+      SOCKET_ACTIONS.PICK_COMPLETE,`${envs[j]}|${url}`);
     j += 1;
   }
-  return server_resp;
+
 };
 
 const prepare_pick_criteria = async (envs, pr_ids,approval="") => {
-  let previous_prs = `#### Previous PR - \n`
-  pr_ids.map(id=>{
-    previous_prs += `- #${id}\n\n`
-  })
-  if (!!approval) {
-    previous_prs += `[QA_APPROVAL](${approval})\n\n`;
+  try{
+    let previous_prs = `#### Previous PR - \n`
+    pr_ids.map(id=>{
+      previous_prs += `- #${id}\n\n`
+    })
+    if (!!approval) {
+      previous_prs += `[QA_APPROVAL](${approval})\n\n`;
+    }
+    const details = {};
+    const raw_pr = await octo_get_pull_request(pr_ids[0]);
+    const commits = await octo_get_commits(pr_ids);
+    details.id = raw_pr.number;
+    details.title = raw_pr.title;
+    details.body = previous_prs + raw_pr.body;
+    details.branch_name = raw_pr.head.ref;
+    details.cp_commits = commits;
+    details.envs = envs;
+    details.pr_ids = pr_ids;
+    return details;
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  const details = {};
-  const raw_pr = await octo_get_pull_request(pr_ids[0]);
-  const commits = await octo_get_commits(pr_ids);
-  details.id = raw_pr.number;
-  details.title = raw_pr.title;
-  details.body = previous_prs + raw_pr.body;
-  details.branch_name = raw_pr.head.ref;
-  details.cp_commits = commits;
-  details.envs = envs;
-  details.pr_ids = pr_ids;
-  return details;
 };
 
-const cherry_pick = async ({ pr_ids = [], envs = "local", approval="" }) => {
+const cherry_pick = async (
+  socket,
+  { pr_ids = [], envs = "local", approval = "" }
+) => {
+  console.log("GOT DATA = > ",pr_ids,envs,approval)
   const criteria = await prepare_pick_criteria(envs, pr_ids, approval);
-  const basket = await pick_cherries(criteria);
-  return {
-    data: basket,
-  };
+  if (!criteria) {
+    socket.emit(SOCKET_ACTIONS.ERROR, "Something went wrong while getting PR information. please check logs.");
+    socket.emit(SOCKET_ACTIONS.COMPLETE);
+    return
+  }
+  await pick_cherries(socket, criteria);
+  socket.emit(SOCKET_ACTIONS.COMPLETE);  
 };
 
 export default cherry_pick;
