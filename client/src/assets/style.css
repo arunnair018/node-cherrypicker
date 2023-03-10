@@ -1,3 +1,11 @@
+.text-green {
+  color: green;
+}
+
+.text-red {
+  color: darkred;
+}
+
 .timestamp {
    margin-left: 8px;
    font-weight: lighter;
@@ -24,6 +32,7 @@
    padding: 24px 24px;
    display: flex;
    margin-top: 12px;
+   height: calc(100vh - 150px);
 }
 
 .content-container>div {
@@ -38,9 +47,15 @@
 }
 
 .picker-form-wrapper .ant-checkbox-group {
-   display: list-item;
-   height: 200px;
+   display: block;
+   width: 80%;
    overflow: auto;
+   scrollbar-width: none;
+}
+
+.picker-form-wrapper .ant-checkbox-group::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .picker-form-wrapper .ant-checkbox-group .ant-checkbox-group-item {

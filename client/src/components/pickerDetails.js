@@ -128,11 +128,27 @@ const PickerDetails = ({ formData, setFormData }) => {
               >
                 <div>
                   {!!item?.messages.length &&
-                    item?.messages?.map(({ success, message }, index) => {
+                    item?.messages?.map(({ success, message, commits=null }, index) => {
                       return (
+                        <>
                         <p key={index}>
                           <span>{!!success ? "✅" : "❌"}</span>&nbsp;{message}
                         </p>
+                        {!!commits && (
+                            <ul>
+                              {commits.map((item, index) => {
+                                return (
+                                  <li
+                                    key={index}
+                                    className={`${
+                                      !!item.success ? "text-green" : "text-red"
+                                    }`}
+                                  >{`${item.commit.slice(0,5)} : ${item.message}`}</li>
+                                );
+                              })}
+                            </ul>
+                          )}</>
+                        
                       );
                     })}
                 </div>

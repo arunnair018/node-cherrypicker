@@ -37,7 +37,6 @@ const copy_commits = async (socket,commits) => {
       const [success, message] = await syscmd(
         GIT_COMMANDS.PICK_SINGLE_COMMIT(commits[i])
       );
-      socket.emit(SOCKET_ACTIONS.PICK_PROGRESS,JSON.stringify({success,message}))
       commit_resp.push({ commit: commits[i], success, message });
       if (!success) {
         break;
@@ -115,7 +114,15 @@ const pick_cherries = async (socket,deatils) => {
 
       // copy new commits
       const new_commits = await copy_commits(socket,deatils.cp_commits);
-      const false_commit = new_commits.find((pick) => !pick.success) || null;
+      const false_commit = new_commits.some((pick) => !pick.success);
+      socket.emit(
+        SOCKET_ACTIONS.PICK_PROGRESS,
+        JSON.stringify({
+          success: false_commit,
+          message: "commit logs :",
+          commits : new_commits
+        })
+      );
       if (!!false_commit) {
         throw new Error(
           "Failed to pick commits. please refer logs for more info."
@@ -173,7 +180,7 @@ const pick_cherries = async (socket,deatils) => {
     }
     socket.emit(SOCKET_ACTIONS.PICK_START,envs[j])
     const [new_branch,url] = await create_new_pr(envs[j]);
-    !!url ? await delete_branch(socket, head_branch,false) : await delete_branch(socket,new_branch );
+    !!url ? await delete_branch(socket, new_branch,false) : await delete_branch(socket,new_branch );
     socket.emit(
       SOCKET_ACTIONS.PICK_COMPLETE,`${envs[j]}|${url}`);
     j += 1;
