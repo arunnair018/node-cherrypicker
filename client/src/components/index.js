@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout,theme } from "antd";
+import { Layout, theme } from "antd";
 import PickerForm from "./pickerForm";
 import { getServers } from "../utils/apiCaller";
 import PickerDetails from "./pickerDetails";

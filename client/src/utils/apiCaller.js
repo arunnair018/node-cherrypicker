@@ -1,6 +1,6 @@
 import Axios from "axios";
 import socketIOClient from "socket.io-client";
-const SOCKET_ENDPOINT  = "http://localhost:8080"
+const SOCKET_ENDPOINT = "http://localhost:8080";
 
 export const getServers = async () => {
   try {
@@ -17,7 +17,6 @@ export const getServers = async () => {
   }
 };
 
-
 export const getPickerSocket = () => {
-    return socketIOClient(SOCKET_ENDPOINT)
-}
+  return socketIOClient(SOCKET_ENDPOINT);
+};

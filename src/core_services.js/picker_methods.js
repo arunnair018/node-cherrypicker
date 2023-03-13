@@ -6,13 +6,15 @@ import {
 import { GIT_COMMANDS } from "../utilities/git_commands.js";
 import { syscmd } from "./shell_methods.js";
 
+const PRE_ENV_REGEX = /\[(.*?)\]/gi;
+
 const SOCKET_ACTIONS = {
-  PICK_START : 'pick_start',
-  PICK_PROGRESS : 'pick_progress',
-  PICK_COMPLETE : 'pick_complete',
-  COMPLETE: 'complete',
-  ERROR: "error"
-}
+  PICK_START: "pick_start",
+  PICK_PROGRESS: "pick_progress",
+  PICK_COMPLETE: "pick_complete",
+  COMPLETE: "complete",
+  ERROR: "error",
+};
 
 const cut_branch_from_base = async (base_branch, new_branch) => {
   console.log("\n cutting new branch from ", base_branch);
@@ -28,7 +30,7 @@ const cut_branch_from_base = async (base_branch, new_branch) => {
   }
 };
 
-const copy_commits = async (socket,commits) => {
+const copy_commits = async (socket, commits) => {
   console.log("\n starting picking commit");
   const commit_resp = [];
   try {
@@ -37,7 +39,11 @@ const copy_commits = async (socket,commits) => {
       const [success, message] = await syscmd(
         GIT_COMMANDS.PICK_SINGLE_COMMIT(commits[i])
       );
-      commit_resp.push({ commit: commits[i], success, message });
+      commit_resp.push({
+        commit: commits[i],
+        success,
+        message: !!message ? message : "picked",
+      });
       if (!success) {
         break;
       }
@@ -49,7 +55,7 @@ const copy_commits = async (socket,commits) => {
   return commit_resp;
 };
 
-const delete_branch = async (socket,branch, origin = true) => {
+const delete_branch = async (socket, branch, origin = true) => {
   try {
     console.log("\n deleting branch ", branch);
     if (!!origin) {
@@ -60,21 +66,29 @@ const delete_branch = async (socket,branch, origin = true) => {
     if (!!origin) {
       await syscmd(GIT_COMMANDS.DELETE_ORIGIN(branch));
     }
-    socket.emit(SOCKET_ACTIONS.PICK_PROGRESS, JSON.stringify({
-      success: true,
-      message: "Deleted branch successfully",
-    }));
+    socket.emit(
+      SOCKET_ACTIONS.PICK_PROGRESS,
+      JSON.stringify({
+        success: true,
+        message: "Deleted branch successfully",
+      })
+    );
   } catch {
-    socket.emit(SOCKET_ACTIONS.PICK_PROGRESS, JSON.stringify({
-      success: false,
-      message: "Something went wrong while deleting branch, Please refer logs.",
-    }));
+    socket.emit(
+      SOCKET_ACTIONS.PICK_PROGRESS,
+      JSON.stringify({
+        success: false,
+        message:
+          "Something went wrong while deleting branch, Please refer logs.",
+      })
+    );
   }
 };
 
 const pull_request = async (deatils, head_branch, base_branch) => {
+  const localTitle = details.title.replace(PRE_ENV_REGEX, "");
   const resp = await octo_create_pull_request({
-    title: `[${base_branch}] ${deatils.title}`,
+    title: `[${base_branch}] ${localTitle}`,
     body: deatils.body,
     head: head_branch,
     base: base_branch,
@@ -85,7 +99,7 @@ const pull_request = async (deatils, head_branch, base_branch) => {
   return false;
 };
 
-const pick_cherries = async (socket,deatils) => {
+const pick_cherries = async (socket, deatils) => {
   const envs = deatils.envs || [];
   let break_picking = false;
 
@@ -113,14 +127,14 @@ const pick_cherries = async (socket,deatils) => {
       );
 
       // copy new commits
-      const new_commits = await copy_commits(socket,deatils.cp_commits);
+      const new_commits = await copy_commits(socket, deatils.cp_commits);
       const false_commit = new_commits.some((pick) => !pick.success);
       socket.emit(
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
           success: !!false_commit ? false : true,
           message: "commit logs :",
-          commits : new_commits
+          commits: new_commits,
         })
       );
       if (!!false_commit) {
@@ -168,32 +182,32 @@ const pick_cherries = async (socket,deatils) => {
       );
       break_picking = true;
     }
-    
-    return [new_branch,new_pr_url]
+
+    return [new_branch, new_pr_url];
   };
 
   let j = 0;
   while (j < envs.length) {
     if (!!break_picking) {
-      socket.emit("completed")
+      socket.emit("completed");
       break;
     }
-    socket.emit(SOCKET_ACTIONS.PICK_START,envs[j])
-    const [new_branch,url] = await create_new_pr(envs[j]);
-    !!url ? await delete_branch(socket, new_branch,false) : await delete_branch(socket,new_branch );
-    socket.emit(
-      SOCKET_ACTIONS.PICK_COMPLETE,`${envs[j]}|${url}`);
+    socket.emit(SOCKET_ACTIONS.PICK_START, envs[j]);
+    const [new_branch, url] = await create_new_pr(envs[j]);
+    !!url
+      ? await delete_branch(socket, new_branch, false)
+      : await delete_branch(socket, new_branch);
+    socket.emit(SOCKET_ACTIONS.PICK_COMPLETE, `${envs[j]}|${url}`);
     j += 1;
   }
-
 };
 
-const prepare_pick_criteria = async (envs, pr_ids,approval="") => {
-  try{
-    let previous_prs = `#### Previous PR - \n`
-    pr_ids.map(id=>{
-      previous_prs += `- #${id}\n\n`
-    })
+const prepare_pick_criteria = async (envs, pr_ids, approval = "") => {
+  try {
+    let previous_prs = `#### Previous PR - \n`;
+    pr_ids.map((id) => {
+      previous_prs += `- #${id}\n\n`;
+    });
     if (!!approval) {
       previous_prs += `[QA_APPROVAL](${approval})\n\n`;
     }
@@ -209,8 +223,8 @@ const prepare_pick_criteria = async (envs, pr_ids,approval="") => {
     details.pr_ids = pr_ids;
     return details;
   } catch (err) {
-    console.error(err)
-    return false
+    console.error(err);
+    return false;
   }
 };
 
@@ -218,15 +232,18 @@ const cherry_pick = async (
   socket,
   { pr_ids = [], envs = "local", approval = "" }
 ) => {
-  console.log("GOT DATA = > ",pr_ids,envs,approval)
+  console.log("GOT DATA = > ", pr_ids, envs, approval);
   const criteria = await prepare_pick_criteria(envs, pr_ids, approval);
   if (!criteria) {
-    socket.emit(SOCKET_ACTIONS.ERROR, "Something went wrong while getting PR information. please check logs.");
+    socket.emit(
+      SOCKET_ACTIONS.ERROR,
+      "Something went wrong while getting PR information. please check logs."
+    );
     socket.emit(SOCKET_ACTIONS.COMPLETE);
-    return
+    return;
   }
   await pick_cherries(socket, criteria);
-  socket.emit(SOCKET_ACTIONS.COMPLETE);  
+  socket.emit(SOCKET_ACTIONS.COMPLETE);
 };
 
 export default cherry_pick;

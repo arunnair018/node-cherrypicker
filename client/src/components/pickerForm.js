@@ -7,14 +7,14 @@ const PickerForm = ({ serverList, setFormData }) => {
   const [error, setError] = useState(false);
 
   const validateForm = () => {
-    setError(false)
+    setError(false);
     const { prids, envs = [], approval, snapshot } = form.getFieldsValue();
     if (!!snapshot) {
       envs.push(snapshot.trim());
-    } 
-    if(!prids || !envs.length){
-      setError(true)
-      return
+    }
+    if (!prids || !envs.length) {
+      setError(true);
+      return;
     }
     const payload = {
       pr_ids:
@@ -24,27 +24,21 @@ const PickerForm = ({ serverList, setFormData }) => {
           .map((i) => i.trim())
           .filter((i) => !!i) || [],
       envs: envs,
-      ...(!!approval && {approval: approval.trim()})
+      ...(!!approval && { approval: approval.trim() }),
     };
     setFormData(payload);
-    setServers([])
-    form.resetFields()
+    setServers([]);
+    form.resetFields();
   };
 
   return (
     <div>
       <Form form={form} layout="vertical">
-        <Form.Item
-          label="PR IDS"
-          name="prids"
-        >
+        <Form.Item label="PR IDS" name="prids">
           <Input placeholder="please enter comma seperated pr id's" />
         </Form.Item>
-        
-        <Form.Item
-          label="Select servers"
-          name="envs"
-        >
+
+        <Form.Item label="Select servers" name="envs">
           <Checkbox.Group
             options={serverList}
             value={servers}
@@ -53,22 +47,29 @@ const PickerForm = ({ serverList, setFormData }) => {
             }}
           />
         </Form.Item>
-        
+
         <Form.Item label="Snapshot" name="snapshot">
           <Input placeholder="please enter snapshot branch name" />
         </Form.Item>
-        
+
         <Form.Item label="QA approval link" name="approval">
           <Input placeholder="please enter slack link for approval" />
         </Form.Item>
-        
+
         <Form.Item>
           <Button type="primary" onClick={validateForm}>
             Pick
           </Button>
         </Form.Item>
       </Form>
-      {!!error && <Alert message={<div>Are you sure details are correct to start a pick!!</div>} type="error" />}
+      {!!error && (
+        <Alert
+          message={
+            <div>Are you sure details are correct to start a pick!!</div>
+          }
+          type="error"
+        />
+      )}
     </div>
   );
 };
