@@ -118,7 +118,7 @@ const pick_cherries = async (socket,deatils) => {
       socket.emit(
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
-          success: false_commit,
+          success: !!false_commit ? false : true,
           message: "commit logs :",
           commits : new_commits
         })
