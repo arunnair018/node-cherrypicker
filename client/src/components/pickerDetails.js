@@ -44,7 +44,7 @@ const PickerDetails = ({ formData, setFormData }) => {
           env,
           messages: currentProgress.current,
           url,
-          timestamp: new Date().toLocaleString()
+          timestamp: new Date().toLocaleString(),
         },
         ...picks,
       ]);
@@ -72,10 +72,6 @@ const PickerDetails = ({ formData, setFormData }) => {
     }
   }, [formData]);
 
-  console.log(currentEnv);
-  console.log(currentProgress);
-  console.log(picks);
-
   return (
     <div className="pick-wrapper">
       {!!error && (
@@ -101,56 +97,68 @@ const PickerDetails = ({ formData, setFormData }) => {
           return (
             <div className="pick-completed" key={index}>
               <Card
-                title={<div>
-                  <span>{item.env}</span> 
-                  <span className="timestamp">( {item.timestamp} )</span>
-                </div>}
+                title={
+                  <div>
+                    <span>{item.env}</span>
+                    <span className="timestamp">( {item.timestamp} )</span>
+                  </div>
+                }
                 style={{ width: "100%" }}
                 extra={
-                  !!item.url ?
-                  <div>
-                    <Button
-                      children={"copy"}
-                      type={"link"}
-                      onClick={() => {
-                        navigator.clipboard.writeText(item.url);
-                      }}
-                    />
-                    <Button
-                      children={"view"}
-                      type={"primary"}
-                      onClick={() => {
-                        window.open(item.url, "_blank");
-                      }}
-                    />
-                  </div> : <></>
+                  !!item.url ? (
+                    <div>
+                      <Button
+                        children={"copy"}
+                        type={"link"}
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.url);
+                        }}
+                      />
+                      <Button
+                        children={"view"}
+                        type={"primary"}
+                        onClick={() => {
+                          window.open(item.url, "_blank");
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <></>
+                  )
                 }
               >
                 <div>
                   {!!item?.messages.length &&
-                    item?.messages?.map(({ success, message, commits=null }, index) => {
-                      return (
-                        <>
-                        <p key={index}>
-                          <span>{!!success ? "✅" : "❌"}</span>&nbsp;{message}
-                        </p>
-                        {!!commits && (
-                            <ul>
-                              {commits.map((item, index) => {
-                                return (
-                                  <li
-                                    key={index}
-                                    className={`${
-                                      !!item.success ? "text-green" : "text-red"
-                                    }`}
-                                  >{`${item.commit.slice(0,5)} : ${item.message}`}</li>
-                                );
-                              })}
-                            </ul>
-                          )}</>
-                        
-                      );
-                    })}
+                    item?.messages?.map(
+                      ({ success, message, commits = null }, index) => {
+                        return (
+                          <>
+                            <p key={index}>
+                              <span>{!!success ? "✅" : "❌"}</span>&nbsp;
+                              {message}
+                            </p>
+                            {!!commits && (
+                              <ul>
+                                {commits.map((item, index) => {
+                                  return (
+                                    <li
+                                      key={index}
+                                      className={`${
+                                        !!item.success
+                                          ? "text-green"
+                                          : "text-red"
+                                      }`}
+                                    >{`${item.commit.slice(0, 5)} : ${
+                                      item.message
+                                    }`}</li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </>
+                        );
+                      }
+                    )}
                 </div>
               </Card>
             </div>
