@@ -41,7 +41,6 @@ const io = new Server(server, {
   },
 });
 io.on("connection", (socket) => {
-  console.log("connected");
   socketHandler(socket);
   socket.on("disconnect", () => {
     console.log("connection terminated");

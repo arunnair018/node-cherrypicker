@@ -70,7 +70,7 @@ const delete_branch = async (socket, branch, origin = true) => {
       SOCKET_ACTIONS.PICK_PROGRESS,
       JSON.stringify({
         success: true,
-        message: "Deleted branch successfully",
+        message: "Branch deleted",
       })
     );
   } catch {
@@ -86,7 +86,7 @@ const delete_branch = async (socket, branch, origin = true) => {
 };
 
 const pull_request = async (deatils, head_branch, base_branch) => {
-  const localTitle = details.title.replace(PRE_ENV_REGEX, "");
+  const localTitle = deatils.title.replace(PRE_ENV_REGEX, "");
   const resp = await octo_create_pull_request({
     title: `[${base_branch}] ${localTitle}`,
     body: deatils.body,
@@ -122,7 +122,7 @@ const pick_cherries = async (socket, deatils) => {
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
           success: true,
-          message: `created new branch: ${new_branch}`,
+          message: `Created new branch: ${new_branch}`,
         })
       );
 
@@ -133,7 +133,7 @@ const pick_cherries = async (socket, deatils) => {
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
           success: !!false_commit ? false : true,
-          message: "commit logs :",
+          message: !!false_commit ? "Something went wrong while picking commits" : "Picked commits",
           commits: new_commits,
         })
       );
@@ -156,7 +156,7 @@ const pick_cherries = async (socket, deatils) => {
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
           success: true,
-          message: `Pushed changes successfully to remote.`,
+          message: `Pushed changes to remote.`,
         })
       );
 
@@ -171,7 +171,7 @@ const pick_cherries = async (socket, deatils) => {
         SOCKET_ACTIONS.PICK_PROGRESS,
         JSON.stringify({
           success: true,
-          message: "pull request created successfully.",
+          message: "Pull request created",
         })
       );
     } catch (error) {

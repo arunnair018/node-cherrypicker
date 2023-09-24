@@ -1,3 +1,19 @@
+.ant-layout-content {
+  overflow: auto;
+}
+
+label:not([class^="ant-checkbox"]){
+  font-weight: bold;
+}
+
+.ant-card .ant-card-body {
+ padding: 12px 24px;
+}
+
+.ant-card .ant-card-body p {
+  margin: 4px 0px;
+}
+
 .text-green {
   color: green;
 }
@@ -22,17 +38,9 @@
   font-size: 24px;
 }
 
-.ant-layout-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .content-container {
-  padding: 24px 24px;
   display: flex;
   margin-top: 12px;
-  height: calc(100vh - 150px);
 }
 
 .content-container>div {
@@ -40,10 +48,8 @@
 }
 
 .picker-form-wrapper {
-  width: 45%;
-  max-height: calc(100vh - 200px);
-  overflow: auto;
-  border-right: 1px solid lightgrey;
+  flex: 0.75;
+  border-right: 1px solid black;
 }
 
 .picker-form-wrapper .ant-checkbox-group {
@@ -64,10 +70,8 @@
 }
 
 .picker-detail-wrapper {
-  width: 80%;
+  flex: 1;
   padding: 0px 12px;
-  max-height: calc(100vh - 200px);
-  overflow: auto;
 }
 
 .pick-completed,

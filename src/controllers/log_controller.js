@@ -3,7 +3,6 @@
 import cherry_pick from "../core_services.js/picker_methods.js";
 
 export const socketHandler = (socket) => {
-  console.log("handler");
   socket.emit("acceptence", "server accepted");
   socket.on("start", (data) => {
     const parsedData = JSON.parse(data);
