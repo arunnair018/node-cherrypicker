@@ -14,7 +14,7 @@ const PickerDetails = ({ formData, setFormData }) => {
   const [picks, setPicks] = useState([]);
   const [error, setError] = useState("");
   const currentProgress = useRef();
-  const [currentEnv, setcurrentEnv] = useState("");
+    const [currentEnv, setcurrentEnv] = useState("");
 
   const startPicker = async () => {
     const socket = await getPickerSocket();
@@ -26,7 +26,7 @@ const PickerDetails = ({ formData, setFormData }) => {
 
     // each PICK
     socket.on(SOCKET_ACTIONS.PICK_START, (data) => {
-      currentProgress.current = [];
+            currentProgress.current = [];
       setcurrentEnv(data);
     });
 
@@ -39,7 +39,7 @@ const PickerDetails = ({ formData, setFormData }) => {
     // pick complete
     socket.on(SOCKET_ACTIONS.PICK_COMPLETE, (data) => {
       const [env, url] = data.split("|");
-      setPicks([
+            setPicks([
         {
           env,
           messages: currentProgress.current,
@@ -68,7 +68,7 @@ const PickerDetails = ({ formData, setFormData }) => {
     if (!!formData) {
       currentProgress.current = [];
       setcurrentEnv("");
-      startPicker();
+            startPicker();
     }
   }, [formData]);
 
@@ -93,7 +93,6 @@ const PickerDetails = ({ formData, setFormData }) => {
       )}
       {!!picks?.length &&
         picks.map((item, index) => {
-          console.log(item);
           return (
             <div className="pick-completed" key={index}>
               <Card
@@ -134,10 +133,12 @@ const PickerDetails = ({ formData, setFormData }) => {
                         return (
                           <>
                             <p key={index}>
-                              <span>{!!success ? "✅" : "❌"}</span>&nbsp;
+                              <span className={`${!!success
+                                          ? "text-green"
+                                          : "text-red" }`}>{!!success ? "✔" : "✘"}</span>&nbsp;
                               {message}
                             </p>
-                            {!!commits && (
+                            {/* {!!commits && (
                               <ul>
                                 {commits.map((item, index) => {
                                   return (
@@ -154,7 +155,7 @@ const PickerDetails = ({ formData, setFormData }) => {
                                   );
                                 })}
                               </ul>
-                            )}
+                            )} */}
                           </>
                         );
                       }

@@ -3,7 +3,7 @@ import { Layout, theme } from "antd";
 import PickerForm from "./pickerForm";
 import { getServers } from "../utils/apiCaller";
 import PickerDetails from "./pickerDetails";
-const { Header, Content, Footer } = Layout;
+const { Header, Content } = Layout;
 
 const PickerBaseComponent = () => {
   const {
@@ -29,11 +29,8 @@ const PickerBaseComponent = () => {
       <Header>
         <div className="header-title"> CHERRY PICKER</div>
       </Header>
-      <Content style={{ padding: "0 50px" }}>
-        <div
-          className="site-layout-content"
-          style={{ background: colorBgContainer }}
-        >
+      <Content>
+        
           <div className="content-container">
             <div className="picker-form-wrapper">
               <PickerForm serverList={serverList} setFormData={setFormData} />
@@ -41,7 +38,7 @@ const PickerBaseComponent = () => {
             <div className="picker-detail-wrapper">
               <PickerDetails formData={formData} setFormData={setFormData} />
             </div>
-          </div>
+        
         </div>
       </Content>
     </Layout>
