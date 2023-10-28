@@ -1,5 +1,5 @@
 # node-cherrypicker
-a cherry-picker utility written in node
+A GitHub cherry-picking tool with a user-friendly interface that automates the process of creating a new pull request for a server branch by cherry-picking individual or multiple pull request commits from one server branch to another.
 
 
 ## Setup/Installations
