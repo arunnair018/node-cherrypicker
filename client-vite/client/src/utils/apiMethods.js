@@ -1,14 +1,6 @@
 import Axios from "axios";
 import socketIOClient from "socket.io-client";
-
-const SOCKET_ENDPOINT = "http://localhost:8080";
-const SOCKET_ACTIONS = {
-  PICK_START: "pick_start",
-  PICK_PROGRESS: "pick_progress",
-  PICK_COMPLETE: "pick_complete",
-  COMPLETE: "complete",
-  ERROR: "error",
-};
+import { SOCKET_ACTIONS, SOCKET_ENDPOINT } from "./constants";
 
 export const getServers = async () => {
   try {
