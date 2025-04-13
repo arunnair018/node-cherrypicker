@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { Button, Form, Input, Checkbox, notification, Spin } from "antd";
+import { Button, Form, Input, Checkbox, Spin } from "antd";
 import { startPicker } from "../utils/apiMethods";
+import { CallToast } from "./toast";
 
 const PickerForm = ({ serverList }) => {
   const [form] = Form.useForm();
   const [servers, setServers] = useState([]);
-  const [api, contextHolder] = notification.useNotification();
   const [prsMade, setPrsMade] = useState({});
 
   const openNotification = (description = "Something went wrong!") => {
-    api.error({
+    CallToast('error',{
       message: `Error!`,
       description,
     });
@@ -52,8 +52,7 @@ const PickerForm = ({ serverList }) => {
 
   return (
     <>
-      <div className="form-wrapper">
-        {contextHolder}
+      <div className="form-wrapper"> 
         <Form form={form} layout="vertical">
           <Form.Item label="PR IDS" name="prids">
             <Input placeholder="please enter comma seperated pr id's" />
