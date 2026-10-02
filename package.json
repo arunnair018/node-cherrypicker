@@ -1,34 +1,65 @@
 {
-  "name": "cherrypicker",
+  "name": "node-cherrypicker",
   "version": "1.0.0",
-  "description": "a utility to automate git cherry-picking",
-  "main": "index.js",
-  "scripts": {
-    "client" : "cd client-vite/client && npm run dev",
-    "start": "concurrently --names \"server,client\" -c \"bgBlue.bold,bgMagenta.bold\" \"nodemon server.js\" \"npm run client\""
+  "description": "Local web app that cherry-picks and backports GitHub pull requests to multiple branches and opens a pull request for each.",
+  "keywords": [
+    "cherry-pick",
+    "cherrypick",
+    "backport",
+    "git",
+    "github",
+    "pull-request",
+    "release-management",
+    "hotfix",
+    "automation",
+    "developer-tools",
+    "octokit",
+    "socket.io",
+    "react"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Arun Kumar Nair",
+    "url": "https://github.com/arunnair018"
   },
+  "homepage": "https://github.com/arunnair018/node-cherrypicker#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/arunnair018/node-cherrypicker.git"
   },
-  "author": "Arun Kumar Nair",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/arunnair018/node-cherrypicker/issues"
   },
   "type": "module",
-  "homepage": "https://github.com/arunnair018/node-cherrypicker#readme",
+  "main": "index.js",
+  "bin": {
+    "node-cherrypicker": "index.js"
+  },
+  "files": [
+    "index.js",
+    "config.js",
+    "sample_env",
+    "src",
+    "client-vite/client/dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"NO_OPEN=1 nodemon index.js\" \"npm --prefix client-vite/client run dev\"",
+    "build": "npm --prefix client-vite/client install && npm --prefix client-vite/client run build",
+    "start": "node index.js"
+  },
   "dependencies": {
-    "concurrently": "^7.6.0",
-    "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "mongodb": "^4.12.1",
-    "mongoose": "^6.7.5",
     "octokit": "^2.0.10",
     "socket.io": "^4.6.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "nodemon": "^2.0.20",
+    "concurrently": "^7.6.0"
   }
 }

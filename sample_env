@@ -1,7 +1,6 @@
-# GIT_BASE_DIRECTORY=<git repo path (repo not included)>
-# GITHUB_ACCESS_TOKEN=<git personal access token>
-# PORT=<port not in use>
-# REPO_OWNER=<repo owner>
-# REPO=<repo>
-# BASE_BRANCH=<main branch of repo>
-# SERVER_BRANCHES=<comma seperated branches {for UI}>
+# Everything below is optional. Repo, token and servers can all be set in the UI.
+# PORT=8086
+# SERVER_BRANCHES=staging production      # default list for the sidebar (space or comma separated)
+# GIT_BASE_DIRECTORY=/path/to/clones/     # default repo = GIT_BASE_DIRECTORY + REPO (else the current directory)
+# REPO=my-repo
+# GITHUB_ACCESS_TOKEN=                    # otherwise `gh auth token` is used

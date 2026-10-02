@@ -1,93 +1,141 @@
-import React, { useEffect, useState } from "react";
-import { getServers } from "./utils/apiMethods";
-import PickerForm from "./components/picker-form";
-import { cherrySvg, settingsSvg } from "./utils/svgIcons";
-import { Drawer, Form, Button } from "antd";
-import SettingsForm from "./components/settings-form";
-import { CallToast } from "./components/toast";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "./lib/api";
+import { parseServers, useSettings } from "./lib/useSettings";
+import { useJob } from "./lib/useJob";
+import Sidebar from "./components/Sidebar";
+import PickerForm from "./components/PickerForm";
+import JobView from "./components/JobView";
+import History from "./components/History";
+import SwapCard from "./components/SwapCard";
+import { useMediaQuery } from "./lib/useMediaQuery";
+import { CherryLogo, HistoryIcon, MenuIcon } from "./components/icons";
+import { useHistory } from "./lib/useHistory";
 
-function App() {
-  const [serverList, setServerList] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [form] = Form.useForm();
-
-  const validateForm = () => {
-    const {
-      GIT_BASE_DIRECTORY,
-      GITHUB_ACCESS_TOKEN,
-      REPO_OWNER,
-      REPO,
-      BASE_BRANCH,
-      SERVER_BRANCHES,
-    } = form.getFieldsValue();
-    if (
-      !GIT_BASE_DIRECTORY ||
-      !GITHUB_ACCESS_TOKEN ||
-      !REPO_OWNER ||
-      !REPO ||
-      !BASE_BRANCH ||
-      !SERVER_BRANCHES
-    ) {
-      CallToast("error", {
-        message: "Error!",
-        description: "Please fill in all details correctly",
-      });
+const useRepo = (path) => {
+  const [repo, setRepo] = useState({ status: "idle", info: null, error: "" });
+  useEffect(() => {
+    if (!path.trim()) {
+      setRepo({ status: "idle", info: null, error: "" });
       return;
     }
-    const payload = {
-      GIT_BASE_DIRECTORY,
-      GITHUB_ACCESS_TOKEN,
-      REPO_OWNER,
-      REPO,
-      BASE_BRANCH,
-      SERVER_BRANCHES,
+    setRepo((r) => ({ ...r, status: "checking", error: "" }));
+    let live = true;
+    const t = setTimeout(() => {
+      api
+        .inspectRepo(path)
+        .then((info) => live && setRepo({ status: "ok", info, error: "" }))
+        .catch((e) => live && setRepo({ status: "error", info: null, error: e.message }));
+    }, 400);
+    return () => {
+      live = false;
+      clearTimeout(t);
     };
-    console.log("Settings Payload: ", payload);
+  }, [path]);
+  return repo;
+};
+
+const App = () => {
+  const [defaults, setDefaults] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [settings, update] = useSettings(defaults);
+  const repo = useRepo(settings.repoPath);
+  const { job, log, connected, start, cancel, dismiss } = useJob();
+  const { history, usage, clearHistory } = useHistory(job);
+  const narrow = useMediaQuery("(max-width: 1100px)");
+  const [drawer, setDrawer] = useState(null); // narrow screens: "left" | "right" | null
+  const persisted = (key) => {
+    try {
+      return localStorage.getItem(key) === "collapsed";
+    } catch {
+      return false;
+    }
   };
-  const showDrawer = () => {
-    setOpen(true);
-  };
-  const onClose = () => {
-    setOpen(false);
-  };
+  const [leftCollapsed, setLeftCollapsed] = useState(() => persisted("cherrypicker.sidebar"));
+  const [rightCollapsed, setRightCollapsed] = useState(() => persisted("cherrypicker.history"));
+  const flip = (setter, key) => () =>
+    setter((c) => {
+      try {
+        localStorage.setItem(key, c ? "open" : "collapsed");
+      } catch {
+        /* ignore */
+      }
+      return !c;
+    });
+  const toggleLeft = narrow ? () => setDrawer(null) : flip(setLeftCollapsed, "cherrypicker.sidebar");
+  const toggleRight = narrow ? () => setDrawer(null) : flip(setRightCollapsed, "cherrypicker.history");
 
   useEffect(() => {
-    (async () => {
-      const servers = await getServers();
-      setServerList(
-        servers
-          .map((server) => ({
-            label: server,
-            value: server,
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label))
-      );
-    })();
+    if (!narrow) setDrawer(null);
+  }, [narrow]);
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && setDrawer(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  const servers = useMemo(() => parseServers(settings.serversText), [settings.serversText]);
+
+  const refreshAuth = () => api.auth().then(setAuth).catch(() => setAuth({ signedIn: false }));
+  useEffect(() => {
+    api.config().then(setDefaults).catch(() => setDefaults({}));
+    refreshAuth();
   }, []);
 
-  validateForm;
+  const running = job?.status === "running";
 
   return (
-    <div className="main-wrapper">
-      <div className="page-header">
-        <div className="header-title">CHERRY {cherrySvg()} PICKER</div>
-        <div className="settings-icon" onClick={showDrawer}>
-          {settingsSvg()}
-        </div>
-      </div>
-      <div className="page-body">
-        <PickerForm serverList={serverList} />
-      </div>
-      <Drawer
-        title="Settings"
-        onClose={onClose}
-        open={open}
-        width={600}
-      >
-        <SettingsForm form={form} />
-      </Drawer>
+    <div className={`layout ${leftCollapsed ? "left-collapsed" : ""} ${rightCollapsed ? "right-collapsed" : ""}`}>
+      <header className="topbar">
+        <button className="icon-btn" onClick={() => setDrawer("left")} aria-label="Open settings">
+          <MenuIcon size={18} />
+        </button>
+        <span className="topbar-brand">
+          <CherryLogo size={26} />
+          Cherrypicker
+        </span>
+        <button className="icon-btn" onClick={() => setDrawer("right")} aria-label="Open recent picks">
+          <HistoryIcon size={18} />
+        </button>
+      </header>
+      <div className={`scrim ${drawer ? "is-on" : ""}`} onClick={() => setDrawer(null)} />
+
+      <Sidebar
+        auth={auth}
+        refreshAuth={refreshAuth}
+        settings={settings}
+        update={update}
+        repo={repo}
+        collapsed={leftCollapsed}
+        onToggle={toggleLeft}
+        narrow={narrow}
+        open={drawer === "left"}
+      />
+      <main className="main">
+        {!connected && <div className="banner">Lost connection to the local server. Reconnecting…</div>}
+        <SwapCard
+          side={job ? "back" : "front"}
+          front={
+            <PickerForm
+              auth={auth}
+              repo={repo}
+              servers={servers}
+              usage={usage}
+              running={running}
+              onStart={start}
+            />
+          }
+          back={job && <JobView job={job} log={log} onCancel={cancel} onDismiss={dismiss} />}
+        />
+      </main>
+      <History
+        history={history}
+        onClear={clearHistory}
+        collapsed={rightCollapsed}
+        onToggle={toggleRight}
+        narrow={narrow}
+        open={drawer === "right"}
+      />
     </div>
   );
-}
+};
 
 export default App;
