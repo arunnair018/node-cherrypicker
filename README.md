@@ -15,6 +15,12 @@ production" job, so nobody has to remember the checkout, cherry-pick, push and o
 - Works on a **temporary git worktree**, so your checked-out branch and uncommitted changes are never touched.
 - Handles **many PRs onto many branches in one go**, and reports each branch separately.
 
+<p align="center">
+  <img src="docs/screenshots/form.png" alt="node-cherrypicker: choose pull requests and target branches" width="48%">
+  <img src="docs/screenshots/run.png" alt="node-cherrypicker: live progress per branch, with a conflict reported" width="48%">
+</p>
+<p align="center"><sub>Pick PRs and branches (left), then watch each branch's progress (right). Screenshots use made-up demo data.</sub></p>
+
 > **Keywords:** cherry-pick pull request, backport pull request, git cherry-pick automation, hotfix to release
 > branches, cherry-pick PR to multiple branches, GitHub backport tool, Node.js, React, Socket.IO, Octokit.
 
@@ -192,6 +198,7 @@ node-cherrypicker/
 ├── index.js                 # server entry: Express + Socket.IO, serves the built UI
 ├── config.js                # loads optional .env
 ├── sample_env               # documented optional settings
+├── docs/screenshots/        # README screenshots
 ├── src/                     # backend (see src/README.md)
 │   ├── picker.js            #   the cherry-pick job runner (core logic)
 │   ├── git.js               #   git helpers, repo inspection, temporary worktrees
