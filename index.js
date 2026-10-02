@@ -34,7 +34,7 @@ attachSocket(new Server(server, socketOptions));
 await initAuth();
 server.listen(PORT, HOST, () => {
   const url = `http://localhost:${PORT}`;
-  console.log(`Cherrypicker running at ${url}${fs.existsSync(dist) ? "" : " (API only, run the client with `npm run dev`)"}`);
+  console.log(`node-cherrypicker running at ${url}${fs.existsSync(dist) ? "" : " (API only, run the client with `npm run dev`)"}`);
   if (fs.existsSync(dist) && !process.env.NO_OPEN) {
     const opener = { darwin: "open", win32: "explorer" }[process.platform] || "xdg-open";
     execFile(opener, [url], () => {});

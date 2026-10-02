@@ -25,8 +25,7 @@ const FREQUENT_MAX = 6;
 const PickerForm = ({ auth, repo, servers, usage, running, onStart }) => {
   const [prIds, setPrIds] = useState([]);
   const [selected, setSelected] = useState([]);
-  const [custom, setCustom] = useState([]);
-  const [customDraft, setCustomDraft] = useState("");
+  const [custom, setCustom] = useState([]); // extra branches typed as tags (not added to the server list)
   const [draft, setDraft] = useState(false);
   const [previews, setPreviews] = useState({});
   const [error, setError] = useState("");
@@ -34,7 +33,7 @@ const PickerForm = ({ auth, repo, servers, usage, running, onStart }) => {
 
   const repoOk = repo.status === "ok";
   const signedIn = !!auth?.signedIn;
-  const targets = useMemo(() => [...new Set([...servers, ...custom])], [servers, custom]);
+  const targets = servers;
   const frequent = useMemo(
     () =>
       targets
@@ -46,7 +45,7 @@ const PickerForm = ({ auth, repo, servers, usage, running, onStart }) => {
   const others = targets.filter((t) => !frequent.includes(t));
   const othersSelected = others.filter((t) => selected.includes(t)).length;
   // drop selections whose chip no longer exists (e.g. the sidebar list was edited)
-  const envs = targets.filter((t) => selected.includes(t));
+  const envs = [...new Set([...targets.filter((t) => selected.includes(t)), ...custom])];
 
   useEffect(() => {
     if (!repoOk || !signedIn || !prIds.length) return;
@@ -71,14 +70,6 @@ const PickerForm = ({ auth, repo, servers, usage, running, onStart }) => {
 
   const toggle = (env) =>
     setSelected((s) => (s.includes(env) ? s.filter((x) => x !== env) : [...s, env]));
-
-  const addCustom = () => {
-    const name = customDraft.trim();
-    if (!name) return;
-    if (!servers.includes(name) && !custom.includes(name)) setCustom((c) => [...c, name]);
-    setSelected((s) => (s.includes(name) ? s : [...s, name]));
-    setCustomDraft("");
-  };
 
   const blocker = !signedIn
     ? "Connect GitHub in the sidebar"
@@ -192,15 +183,20 @@ const PickerForm = ({ auth, repo, servers, usage, running, onStart }) => {
             <div className="chips chips-scroll">{others.map(renderChip)}</div>
           ))}
         {!targets.length && (
-          <span className="hint">Add servers in the sidebar, or type a branch below.</span>
+          <span className="hint">Add servers in the sidebar, or type branches below.</span>
         )}
-        <Input
+        <Select
+          mode="tags"
           className="custom-input"
-          value={customDraft}
-          onChange={(e) => setCustomDraft(e.target.value)}
-          onPressEnter={addCustom}
-          placeholder="Other branch, e.g. a snapshot (Enter to add)"
-          spellCheck={false}
+          value={custom}
+          onChange={(vals) =>
+            setCustom([...new Set(vals.flatMap((v) => String(v).split(/[\s,]+/)).filter(Boolean))])
+          }
+          tokenSeparators={[",", " "]}
+          open={false}
+          suffixIcon={null}
+          placeholder="Other branches, e.g. a snapshot. Type a name and press Enter."
+          style={{ width: "100%" }}
         />
       </div>
 

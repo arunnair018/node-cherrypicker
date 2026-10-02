@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Cherrypicker! Bug reports, ideas and pull requests are all welcome.
+Thanks for helping improve node-cherrypicker! Bug reports, ideas and pull requests are all welcome.
 
 ## Before you start
 

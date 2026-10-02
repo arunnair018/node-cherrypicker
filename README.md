@@ -1,10 +1,10 @@
-# Cherrypicker: backport & cherry-pick GitHub pull requests to multiple branches
+# node-cherrypicker: backport & cherry-pick GitHub pull requests to multiple branches
 
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Runs locally](https://img.shields.io/badge/runs-locally%20on%20your%20machine-7c5cff)](#security-and-privacy)
 
-**Cherrypicker is a local web app that automates `git cherry-pick` for GitHub pull requests.** Enter one or more
+**node-cherrypicker is a local web app that automates `git cherry-pick` for GitHub pull requests.** Enter one or more
 PR numbers, tick the branches you want them on (staging, production, a release branch, a snapshot…), and it
 cherry-picks the commits onto each branch and opens a ready-to-review pull request for every one, with live progress.
 
@@ -182,7 +182,7 @@ Enterprise as experimental.
 It stays in memory on your machine and is only sent to GitHub. See [Security and privacy](#security-and-privacy).
 
 **Why not `git cherry-pick` by hand or a GitHub Action?**
-By hand you repeat checkout, cherry-pick, push and open-PR for every branch. Cherrypicker does those steps for each
+By hand you repeat checkout, cherry-pick, push and open-PR for every branch. node-cherrypicker does those steps for each
 branch, in isolation, and shows you the result of each at a glance, without any workflow files in your repository.
 
 ## Project structure
@@ -238,5 +238,5 @@ see [SECURITY.md](./SECURITY.md) instead of opening a public issue.
 
 This is an independent open-source project. It is **not affiliated with, endorsed by, or sponsored by GitHub, Inc.**
 GitHub and the GitHub logo are trademarks of GitHub, Inc.; they are used here only to describe what the tool works with.
-Cherrypicker creates branches and pull requests in the repositories you point it at. Use it on repositories you are
+node-cherrypicker creates branches and pull requests in the repositories you point it at. Use it on repositories you are
 authorised to change, and review each pull request it opens.

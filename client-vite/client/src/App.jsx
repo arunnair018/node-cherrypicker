@@ -7,6 +7,7 @@ import PickerForm from "./components/PickerForm";
 import JobView from "./components/JobView";
 import History from "./components/History";
 import SwapCard from "./components/SwapCard";
+import BrandName from "./components/BrandName";
 import { useMediaQuery } from "./lib/useMediaQuery";
 import { CherryLogo, HistoryIcon, MenuIcon } from "./components/icons";
 import { useHistory } from "./lib/useHistory";
@@ -90,7 +91,7 @@ const App = () => {
         </button>
         <span className="topbar-brand">
           <CherryLogo size={26} />
-          Cherrypicker
+          <BrandName />
         </span>
         <button className="icon-btn" onClick={() => setDrawer("right")} aria-label="Open recent picks">
           <HistoryIcon size={18} />

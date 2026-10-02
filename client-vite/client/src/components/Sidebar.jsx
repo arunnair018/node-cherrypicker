@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Input, Space } from "antd";
 import { api } from "../lib/api";
 import { parseServers } from "../lib/useSettings";
+import BrandName from "./BrandName";
 import { ChevronIcon, CherryLogo, XIcon, FolderIcon, GithubIcon, ServerIcon, Spinner } from "./icons";
 
 const SOURCE_LABEL = { gh: "GitHub CLI", token: "access token", env: ".env token" };
@@ -178,7 +179,7 @@ const Sidebar = ({ auth, refreshAuth, settings, update, repo, collapsed, onToggl
   <aside className={`sidebar ${collapsed ? "is-collapsed" : ""} ${open ? "is-open" : ""}`}>
     <div className="brand">
       <CherryLogo size={34} />
-      <span className="brand-text">Cherrypicker</span>
+      <BrandName className="brand-text" />
       <button
         className="icon-btn collapse-btn"
         onClick={onToggle}

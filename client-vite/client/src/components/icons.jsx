@@ -1,21 +1,29 @@
+import { useId } from "react";
+
 // Twin cherries on a joined stem. `mono` draws it in currentColor (for use on a coloured button).
-export const CherryLogo = ({ size = 28, mono = false }) => (
+export const CherryLogo = ({ size = 28, mono = false }) => {
+  // gradient ids must be unique per instance: several logos can be on the page at once, and a
+  // duplicate id resolves to the first one, which may sit inside a hidden element (then it paints nothing)
+  const uid = useId().replace(/:/g, "");
+  const body = `cherry-body-${uid}`;
+  const leaf = `cherry-leaf-${uid}`;
+  return (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
     <defs>
-      <linearGradient id="cherry-body" x1="10" y1="30" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+      <linearGradient id={body} x1="10" y1="30" x2="56" y2="62" gradientUnits="userSpaceOnUse">
         <stop offset="0" stopColor="#c9b8ff" />
         <stop offset="0.55" stopColor="#8b5cf6" />
         <stop offset="1" stopColor="#5b34d6" />
       </linearGradient>
-      <linearGradient id="cherry-leaf" x1="36" y1="6" x2="56" y2="14" gradientUnits="userSpaceOnUse">
+      <linearGradient id={leaf} x1="36" y1="6" x2="56" y2="14" gradientUnits="userSpaceOnUse">
         <stop offset="0" stopColor="#a78bfa" />
         <stop offset="1" stopColor="#7c5cff" />
       </linearGradient>
     </defs>
     <path d="M20 34c1-12 8-20 17-25M44 36c-1-12-4-20-7-27" stroke={mono ? "currentColor" : "#a78bfa"} strokeWidth="2.6" strokeLinecap="round" />
-    <path d="M37 9c5-5 13-5 19-1-4 7-13 9-19 1Z" fill={mono ? "currentColor" : "url(#cherry-leaf)"} />
-    <circle cx="19" cy="45" r="13" fill={mono ? "currentColor" : "url(#cherry-body)"} />
-    <circle cx="44" cy="47" r="12" fill={mono ? "currentColor" : "url(#cherry-body)"} />
+    <path d="M37 9c5-5 13-5 19-1-4 7-13 9-19 1Z" fill={mono ? "currentColor" : `url(#${leaf})`} />
+    <circle cx="19" cy="45" r="13" fill={mono ? "currentColor" : `url(#${body})`} />
+    <circle cx="44" cy="47" r="12" fill={mono ? "currentColor" : `url(#${body})`} />
     {!mono && (
       <>
         <ellipse cx="14.5" cy="40" rx="3.2" ry="2" fill="#fff" opacity="0.35" transform="rotate(-35 14.5 40)" />
@@ -23,7 +31,8 @@ export const CherryLogo = ({ size = 28, mono = false }) => (
       </>
     )}
   </svg>
-);
+  );
+};
 
 const Svg = ({ children, size = 16, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"

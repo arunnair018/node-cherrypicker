@@ -1,6 +1,6 @@
 # Security policy
 
-Cherrypicker handles a GitHub token and runs git commands on your machine, so security reports are taken seriously.
+node-cherrypicker handles a GitHub token and runs git commands on your machine, so security reports are taken seriously.
 
 ## Reporting a vulnerability
 
