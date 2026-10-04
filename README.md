@@ -60,9 +60,10 @@ That's all you need. There is nothing to configure first: sign-in, repository an
 1. **Connect GitHub** (sidebar). If you already use the [GitHub CLI](https://cli.github.com) and ran `gh auth login`,
    you're signed in automatically. Otherwise paste a personal access token (see [Requirements](#requirements)).
 2. **Choose your repository** (sidebar). Type the path to a local clone or press **Browse** to pick the folder.
-   `owner/repo` is read from the clone's `origin` remote.
+   `owner/repo` is read from the clone's `origin` remote. It is **remembered**, so you only do this once.
 3. **List your servers** (sidebar). Type branch names separated by spaces (for example `staging production release-1.2`).
-   They become one-click targets. You can also type any other branch (such as a snapshot) in the form.
+   They become one-click targets, and the list is **remembered** (see [Where your settings are saved](#where-your-settings-are-saved)).
+   You can also type any other branch (such as a snapshot) in the form.
 4. **Enter PR numbers**, select the target branches, and press **Cherry-pick**.
    The form freezes, the page scrolls to the top, and a live progress view slides in.
 5. **When it finishes**, open or copy the PR links (**Copy for Slack** gives one bullet per branch), then press
@@ -125,15 +126,16 @@ If your organisation uses SAML SSO, authorise the token for it.
 
 ## Configuration
 
-**None is required.** Everything can be set in the app. For convenience, an optional `.env` file in the project root
-provides defaults (see [`sample_env`](./sample_env)):
+**None is required.** Everything can be set in the app, and what you set is remembered. For convenience, an optional
+`.env` file in the project root provides first-run defaults (see [`sample_env`](./sample_env)):
 
 | Variable | Purpose | Default |
 |---|---|---|
 | `PORT` | Port the app listens on | `8086` |
 | `SERVER_BRANCHES` | Pre-fills the Servers list (space or comma separated) | empty |
-| `GIT_BASE_DIRECTORY` + `REPO` | Default repository path (`GIT_BASE_DIRECTORY` + `REPO`) | the folder you started it in, if it's a git repo |
+| `GIT_BASE_DIRECTORY` + `REPO` | First-run default repository (`GIT_BASE_DIRECTORY` + `REPO`) | the folder you started it in, if it is a git repo **other than this app's own folder** |
 | `GITHUB_ACCESS_TOKEN` | Use this token instead of the GitHub CLI | not set |
+| `STORE_DIR` | Folder for the encrypted saved settings (used exclusively when set) | `.cherrypicker-data/` in the app folder |
 | `GITHUB_API_URL` | Point at a GitHub Enterprise API (also used for testing) | `https://api.github.com` |
 
 `.env` is git-ignored. Never commit it.
@@ -144,10 +146,30 @@ provides defaults (see [`sample_env`](./sample_env)):
   `localhost`, so other websites and other machines cannot reach it.
 - **Your token stays in memory.** It is never written to disk, logged, or sent anywhere except GitHub. It is passed
   to git through environment variables, not command-line arguments, so it does not show up in the process list.
-- **What the browser stores** (`localStorage`, on your machine only): the repository path, your server list, your last
-  10 runs (PR numbers, branch names, PR links) and branch usage counts. No tokens.
+- **What the browser stores** (`localStorage`, on your machine only): the repository path, a copy of your server list, your
+  last 10 runs (PR numbers, branch names, PR links) and branch usage counts. No tokens.
+- **What is saved on disk:** only your server (target branch) list, in a small encrypted file (details below). Never your token.
 - **No telemetry, no analytics, no third-party calls** other than the GitHub API and your git remote.
 - Branch names are validated and git is run **without a shell**, so a branch name cannot inject a command.
+
+## Where your settings are saved
+
+Your **server (target branch) list** and your **repository path** are saved in an encrypted file on the machine running
+the app, so they survive restarts, clearing your browser, switching browsers and private windows, and you never have to
+re-enter the path each time you start the server. They stay until you delete the file.
+
+- **Location:** `.cherrypicker-data/state.dat` inside the app folder (git-ignored). Set `STORE_DIR` to put it elsewhere.
+  If that folder isn't writable, it falls back to `~/.node-cherrypicker/`.
+- **What's in it:** your branch names and the repository path. Never your GitHub token, which is kept in memory.
+- **Only real repositories are remembered:** a path is saved once it is verified as a git repository.
+- **Not human-readable:** it is AES-256-GCM encrypted, owner-only (permissions `600`), written atomically, and a `.bak` of
+  the previous version is kept. A damaged or tampered file is detected and set aside as `state.dat.corrupt-*`, never
+  silently overwritten.
+- **To reset it:** clear the list or the repository field in the sidebar (empty is remembered as empty), or delete the
+  `.cherrypicker-data` folder to start over (the first-run defaults, such as `SERVER_BRANCHES`, then apply again).
+- **Honest limits:** the app must decrypt the file by itself, so the key is derived from your OS user name and home folder.
+  That keeps it unreadable to anyone opening the file and detects tampering, but it is **not** protection against someone
+  who has access to your machine and the source code. That's fine for branch names and a folder path. Don't treat it as a vault.
 
 ## Troubleshooting
 
@@ -198,6 +220,7 @@ node-cherrypicker/
 ├── index.js                 # server entry: Express + Socket.IO, serves the built UI
 ├── config.js                # loads optional .env
 ├── sample_env               # documented optional settings
+├── .cherrypicker-data/      # (created at runtime, git-ignored) encrypted saved server list
 ├── docs/screenshots/        # README screenshots
 ├── src/                     # backend (see src/README.md)
 │   ├── picker.js            #   the cherry-pick job runner (core logic)
@@ -205,6 +228,7 @@ node-cherrypicker/
 │   ├── github.js            #   GitHub API wrapper (Octokit)
 │   ├── auth.js              #   in-memory sign-in (GitHub CLI or token)
 │   ├── routes.js            #   REST endpoints
+│   ├── store.js             #   encrypted on-disk store for the server list
 │   ├── socket.js            #   real-time job protocol
 │   └── guard.js             #   localhost-only protection
 └── client-vite/client/      # frontend (see client-vite/client/README.md)

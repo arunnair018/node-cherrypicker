@@ -11,6 +11,7 @@ const request = async (method, url, body) => {
 
 export const api = {
   config: () => request("GET", "/api/config"),
+  saveSettings: (patch) => request("PUT", "/api/settings", patch),
   auth: () => request("GET", "/api/auth"),
   authGh: () => request("POST", "/api/auth/gh"),
   authToken: (token) => request("POST", "/api/auth/token", { token }),

@@ -23,7 +23,7 @@ It talks to the local backend only: REST under `/api` and Socket.IO on the same 
 | `App.jsx` | Wires everything together: loads config and auth, owns the settings, repo check, job, history, and panel/drawer state. |
 | `lib/api.js` | `fetch` wrapper for the REST endpoints (`config`, `auth*`, `inspectRepo`, `browseRepo`, `prs`). |
 | `lib/useJob.js` | The Socket.IO connection and the job state (`job`, `log`, `connected`, `start`, `cancel`, `dismiss`). |
-| `lib/useSettings.js` | Repo path and the raw server-list text, persisted in `localStorage`. Also `parseServers()` (splits on whitespace/commas, de-dupes). |
+| `lib/useSettings.js` | Repo path and the raw server-list text. Both are loaded from and saved to the backend's encrypted file (`PUT /api/settings`, debounced; the server only accepts a repo path that is a real git repo) so they survive restarts and clearing the browser; `localStorage` is a fast first paint and fallback. Also `parseServers()` (splits on whitespace/commas, de-dupes). |
 | `lib/useHistory.js` | Records finished runs (last 10) and per-branch usage counts in `localStorage`. |
 | `lib/useMediaQuery.js` | Tiny `matchMedia` hook (drives the narrow-screen drawers). |
 | `components/Sidebar.jsx` | Left panel: GitHub sign-in, repository picker (with Browse), server list. |
@@ -94,7 +94,7 @@ There is no global store. State lives where it is used:
 | State | Where | Persisted |
 |---|---|---|
 | Job, activity log, connection status | `useJob` (a single module-level socket) | No (the server holds it) |
-| Repo path, server list | `useSettings` | `localStorage` `cherrypicker.settings.v1` |
+| Server list and repo path | `useSettings` | **Encrypted file on the machine running the app** (source of truth) plus a `localStorage` copy (`cherrypicker.settings.v1`) |
 | Last 10 runs, branch usage | `useHistory` | `localStorage` `cherrypicker.history.v1`, `cherrypicker.usage.v1` |
 | Panel collapsed/open | `App` | `localStorage` `cherrypicker.sidebar`, `cherrypicker.history` |
 | Form fields (PRs, selected branches, draft) | `PickerForm` | No |

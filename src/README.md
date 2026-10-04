@@ -27,6 +27,8 @@ Browser ──REST /api/*──────►  routes.js ──► auth.js / gi
 | [`github.js`](./github.js) | Thin Octokit wrapper plus `describeGithubError`. |
 | [`git.js`](./git.js) | Runs git (`execFile`, no shell), inspects a repo, and manages temporary worktrees. |
 | [`picker.js`](./picker.js) | **The core.** `startJob()` runs one cherry-pick job and maintains its state object. |
+| [`store.js`](./store.js) | Encrypted on-disk store for the saved settings: server list and repository path (AES-256-GCM, owner-only, atomic writes with a `.bak`). |
+| [`validate.js`](./validate.js) | `BRANCH_RE`, the shared branch-name rule used by the socket and the saved list. |
 | [`socket.js`](./socket.js) | Socket.IO protocol: validation, the one-job-at-a-time lock, broadcasting job state. |
 
 ## REST API
@@ -35,7 +37,8 @@ All routes are under `/api` and return JSON (`{ error }` with a 4xx status on fa
 
 | Method & path | Purpose |
 |---|---|
-| `GET /config` | Defaults for the UI: default repo path (from `GIT_BASE_DIRECTORY`+`REPO`, or the current folder if it is a git repo) and `SERVER_BRANCHES`. |
+| `GET /config` | What the UI starts with. For both the server list and the repository path, the **saved** value wins (`serversStored` / `repoStored` are `true`); otherwise first-run defaults apply: `SERVER_BRANCHES`, and `GIT_BASE_DIRECTORY`+`REPO` or the folder the app was started from if it is a git repo **other than the app's own folder** (so a fresh clone doesn't pre-select itself). |
+| `PUT /settings` | `{ servers?, repoPath? }` → saves in the encrypted store. Server names are validated (`BRANCH_RE`, max 200 chars, max 300 names). A repo path must be a real git repository (the verified top-level folder is what's saved), and an empty string clears it. Fields are merged, so saving one never wipes the other. |
 | `GET /auth` | `{ signedIn, user, source }`. `source` is `gh`, `token` or `env`. |
 | `POST /auth/gh` | Sign in using `gh auth token`. |
 | `POST /auth/token` | Sign in with a pasted token (validated against GitHub first). |
@@ -135,6 +138,26 @@ Details worth knowing:
   }]
 }
 ```
+
+## Saved settings (`store.js`)
+
+The only things persisted by the backend are the user's **server list** and **repository path**, so they outlive browsers and restarts (and the user never re-enters the repo path).
+
+- **Format:** `NCP1 | salt(16) | iv(12) | auth tag(16) | ciphertext`. The plaintext is a small JSON object
+  (`{ servers, repoPath, version, updatedAt }`). AES-256-GCM with the header as additional authenticated data; a fresh random salt
+  and IV on every write, so identical content never produces identical bytes.
+- **Key:** `scrypt(userName + homeDir + constant, salt)`. It is derived, not stored anywhere. This makes the file opaque and
+  tamper-evident and ties it to the OS user, but it is obfuscation-grade, not a vault: anyone with the source and access
+  to the same account can derive the key. By design the file holds no secrets. **Never add the GitHub token to it.**
+- **Where:** `STORE_DIR` if set (used exclusively), else `<app folder>/.cherrypicker-data/`, else `~/.node-cherrypicker/`.
+  Without `STORE_DIR`, reading checks both defaults in that order, so data written to the fallback is still found later.
+  The folder is `700`, the file `600`.
+- **Safe writes:** write to a temp file then `rename` (atomic). The previous good version is copied to `state.dat.bak`.
+  If the existing file can't be decrypted, it is renamed `state.dat.corrupt-<time>` rather than overwritten, and `load`
+  falls back to the `.bak`.
+- **Source of truth:** the UI treats this file as the truth for both values (see the frontend README) and keeps
+  `localStorage` only as a fast first paint and fallback. An explicitly empty saved value means "empty", not "unset", so
+  first-run defaults (`SERVER_BRANCHES`, the start-folder repo) do not silently come back.
 
 ## Security design
 

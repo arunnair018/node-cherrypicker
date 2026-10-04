@@ -141,6 +141,7 @@ const Repository = ({ settings, update, repo }) => {
     </Space.Compact>
     {browseError && <p className="field-error">{browseError}</p>}
     {repo.status === "error" && <p className="field-error">{repo.error}</p>}
+    {repo.status === "idle" && <p className="hint">Choose the repository to cherry-pick in: type its path or press Browse. It is remembered next time.</p>}
     {repo.status === "ok" && (
       <div className="repo-ok">
         <div className="repo-name">

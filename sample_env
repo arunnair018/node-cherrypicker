@@ -4,3 +4,4 @@
 # GIT_BASE_DIRECTORY=/path/to/clones/     # default repo = GIT_BASE_DIRECTORY + REPO (else the current directory)
 # REPO=my-repo
 # GITHUB_ACCESS_TOKEN=                    # otherwise `gh auth token` is used
+# STORE_DIR=/path/to/folder               # where the encrypted server-list file is kept (default: ./.cherrypicker-data)

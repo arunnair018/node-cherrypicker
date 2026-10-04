@@ -2,8 +2,8 @@ import { inspectRepo } from "./git.js";
 import { getToken } from "./auth.js";
 import { startJob } from "./picker.js";
 import { isLocalOrigin } from "./guard.js";
+import { BRANCH_RE } from "./validate.js";
 
-const BRANCH_RE = /^(?!-)(?!.*\.\.)[\w./-]+$/;
 const MAX_LOG = 500;
 
 const validate = (p) => {

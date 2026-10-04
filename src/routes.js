@@ -1,10 +1,16 @@
 import express from "express";
 import path from "node:path";
+import fs from "node:fs";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { inspectRepo } from "./git.js";
 import { createGithub, describeGithubError } from "./github.js";
+import { loadState, saveState } from "./store.js";
+import { BRANCH_RE } from "./validate.js";
 import { authStatus, getToken, loginWithGhCli, loginWithToken, logout } from "./auth.js";
+
+const appDir = fs.realpathSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."));
 
 // Opens the OS-native folder dialog on this machine (the server is local) and resolves the chosen
 // absolute path, or null if cancelled. Browsers can't reveal real paths, so this is done server side.
@@ -49,24 +55,53 @@ export const createRouter = () => {
   router.use(express.json());
 
   // Defaults for the UI. Everything is overridable in the sidebar.
-  router.get("/config", wrap(async () => {
-    let repoPath = "";
-    if (process.env.GIT_BASE_DIRECTORY && process.env.REPO) {
-      repoPath = path.join(process.env.GIT_BASE_DIRECTORY, process.env.REPO);
-    } else {
-      // started from inside a repo? use it
-      repoPath = process.env.INIT_CWD || process.cwd();
-    }
-    let detected = null;
+  // First-run default for the repository: GIT_BASE_DIRECTORY+REPO, else the folder the app was started from if that is a
+  // git repo. The app's own folder is skipped, otherwise a fresh clone would pre-select node-cherrypicker itself.
+  const defaultRepoPath = async () => {
+    const start =
+      process.env.GIT_BASE_DIRECTORY && process.env.REPO
+        ? path.join(process.env.GIT_BASE_DIRECTORY, process.env.REPO)
+        : process.env.INIT_CWD || process.cwd();
     try {
-      detected = (await inspectRepo(repoPath)).root;
+      const root = (await inspectRepo(start)).root;
+      return fs.realpathSync(root) === appDir ? "" : root;
     } catch {
-      /* not a repo */
+      return ""; // not a repo
     }
+  };
+
+  // Saved (encrypted) settings win; env/cwd values are only first-run defaults.
+  router.get("/config", wrap(async () => {
+    const saved = loadState();
+    const hasServers = Array.isArray(saved?.servers);
+    const hasRepo = typeof saved?.repoPath === "string";
     return {
-      repoPath: detected || "",
-      servers: parseList(process.env.SERVER_BRANCHES),
+      repoPath: hasRepo ? saved.repoPath : await defaultRepoPath(),
+      repoStored: hasRepo,
+      servers: hasServers ? saved.servers : parseList(process.env.SERVER_BRANCHES),
+      serversStored: hasServers,
     };
+  }));
+
+  // Persist settings in the encrypted store. Send any of: { servers, repoPath }.
+  router.put("/settings", wrap(async (req) => {
+    const { servers, repoPath } = req.body || {};
+    const patch = {};
+    if (servers !== undefined) {
+      if (!Array.isArray(servers) || servers.length > 300) throw new Error("servers must be a list of at most 300 branch names.");
+      const list = [...new Set(servers.map((s) => String(s).trim()).filter(Boolean))];
+      const bad = list.find((s) => s.length > 200 || !BRANCH_RE.test(s));
+      if (bad) throw new Error(`"${bad.slice(0, 40)}" isn't a valid branch name.`);
+      patch.servers = list;
+    }
+    if (repoPath !== undefined) {
+      if (typeof repoPath !== "string" || repoPath.length > 1024 || repoPath.includes("\0")) throw new Error("Invalid repository path.");
+      // Only real git repositories are remembered (the verified top-level folder). An empty string clears it.
+      patch.repoPath = repoPath.trim() === "" ? "" : (await inspectRepo(repoPath)).root;
+    }
+    if (!Object.keys(patch).length) throw new Error("Nothing to save.");
+    const next = saveState(patch);
+    return { servers: next.servers, repoPath: next.repoPath };
   }));
 
   router.get("/auth", wrap(async () => authStatus()));
